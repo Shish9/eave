@@ -15,7 +15,7 @@
     <Description>A dynamic island for Windows that works with Claude Code</Description>
     <Company>Eave contributors</Company>
     <Copyright>Copyright (c) 2026 Eave contributors</Copyright>
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />

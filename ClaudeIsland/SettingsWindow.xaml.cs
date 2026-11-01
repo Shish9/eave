@@ -230,7 +230,7 @@ public partial class SettingsWindow : Window
         }
         p.Children.Add(wrap);
 
-        custom.Children.Add(Heading(custom, "Custom colours"));
+        Heading(custom, "Custom colours");
         ColorRow(custom, "Background", () => S.CustomBg, v => S.CustomBg = v, new[] { "#000000", "#0B0B0F", "#0A1022", "#1A1210", "#102016", "#201028", "#F4F4F7" });
         ColorRow(custom, "Text", () => S.CustomText, v => S.CustomText = v, new[] { "#FFFFFF", "#EAF0FF", "#F7EDE6", "#E4FFE9", "#111113" });
         ColorRow(custom, "Accent (buttons, progress)", () => S.CustomAccent, v => S.CustomAccent = v,

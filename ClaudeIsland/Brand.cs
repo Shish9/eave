@@ -10,7 +10,7 @@ public static class Brand
     public const string Name = "Eave";
     public const string StudioName = "Eave Studio";
     public const string Publisher = "Eave contributors";
-    public const string Version = "0.3.0";
+    public const string Version = "0.3.1";
     public const string ExeName = "Eave.exe";
     public const string ProcessName = "Eave";
     public const string LegacyProcessName = "ClaudeIsland";
