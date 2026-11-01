@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Paste this into the artifact configuration of the "eave" project on SignPath.
+     The GitHub artifact uploaded by .github/workflows/release.yml is a zip with these two files at its root. -->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="Eave.exe">
+      <authenticode-sign/>
+    </pe-file>
+    <pe-file path="relay.exe">
+      <authenticode-sign/>
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

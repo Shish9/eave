@@ -1,0 +1,72 @@
+name: release
+
+# Builds Eave on GitHub's Windows machines, sends the build to SignPath for signing,
+# and attaches the signed zip to a GitHub release when a version tag (v0.3.0, ...) is pushed.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      # Signing is skipped (and an unsigned zip is produced) until the SignPath secret exists.
+      HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build
+        shell: pwsh
+        run: ./build.ps1
+
+      - name: Upload unsigned build
+        id: upload-unsigned
+        uses: actions/upload-artifact@v4
+        with:
+          name: eave-unsigned
+          path: |
+            dist/Eave.exe
+            dist/relay.exe
+          if-no-files-found: error
+
+      - name: Sign with SignPath
+        if: env.HAS_SIGNPATH == 'true'
+        uses: signpath/github-action-submit-signing-request@v1
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG || 'eave' }}
+          signing-policy-slug: ${{ vars.SIGNPATH_POLICY_SLUG || 'release-signing' }}
+          github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed
+
+      - name: Package
+        shell: pwsh
+        run: |
+          $src = if (Test-Path signed) { 'signed' } else { 'dist' }
+          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'dev' }
+          $suffix = if ($src -eq 'signed') { '' } else { '-UNSIGNED' }
+          Compress-Archive -Path "$src/Eave.exe", "$src/relay.exe" -DestinationPath "Eave-$tag-win-x64$suffix.zip"
+          Get-ChildItem *.zip
+
+      - name: Keep the zip with this run
+        uses: actions/upload-artifact@v4
+        with:
+          name: eave-package
+          path: Eave-*.zip
+
+      - name: Publish GitHub release
+        if: startsWith(github.ref, 'refs/tags/') && env.HAS_SIGNPATH == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Eave-*.zip
+          generate_release_notes: true

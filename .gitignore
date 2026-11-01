@@ -1,0 +1,17 @@
+# build output
+bin/
+obj/
+dist/
+release/
+signed/
+*.zip
+
+# editors
+.vs/
+.vscode/
+*.user
+
+# old prototypes and leftovers kept locally, not part of Eave
+claude-island/
+ClaudeIslandSetup/
+package-lock.json

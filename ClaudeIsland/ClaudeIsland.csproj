@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <AssemblyName>Eave</AssemblyName>
+    <RootNamespace>ClaudeIsland</RootNamespace>
+    <ApplicationIcon>eave.ico</ApplicationIcon>
+
+    <Product>Eave</Product>
+    <AssemblyTitle>Eave</AssemblyTitle>
+    <Description>A dynamic island for Windows that works with Claude Code</Description>
+    <Company>Eave contributors</Company>
+    <Copyright>Copyright (c) 2026 Eave contributors</Copyright>
+    <Version>0.3.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ClaudeRelay\bin\publish\relay.exe" Link="relay.exe" CopyToOutputDirectory="PreserveNewest"
+          Condition="Exists('..\ClaudeRelay\bin\publish\relay.exe')" />
+  </ItemGroup>
+</Project>
