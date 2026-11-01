@@ -333,7 +333,8 @@ public partial class SettingsWindow : Window
         SliderRow(p, "Flag a session as stuck after (seconds)", 30, 600, () => S.StuckSeconds, v => S.StuckSeconds = (int)Math.Round(v));
 
         Heading(p, "Claude Code hooks");
-        p.Children.Add(Hint("These connect Claude Code to the island. A backup of your Claude settings is saved before any change."));
+        p.Children.Add(Hint("These add entries to your Claude Code settings file (~/.claude/settings.json) so Claude Code can report to Eave. " +
+                            "A timestamped backup is saved first, and \"Remove hooks\" takes them out again."));
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
         var status = new TextBlock { Foreground = (Brush)FindResource("Hint"), Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap, FontSize = 12 };
         var install = new Button { Content = "Install hooks" };

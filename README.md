@@ -33,11 +33,15 @@ prompts with one click, and keeps music, downloads, weather and more a glance aw
 
 1. Download the latest `Eave-…-win-x64.zip` from [Releases](../../releases) and unzip it.
 2. Run `Eave.exe --install` (or just open `Eave.exe` and choose "Eave Studio → Behavior → Install hooks").
-   This copies Eave to `%LOCALAPPDATA%\Eave`, starts it with Windows, adds Start menu entries
-   ("Eave" and "Eave Studio") and connects Claude Code. A backup of `~/.claude/settings.json` is saved first.
+   Eave first lists what it is about to change and asks you to confirm. If you agree, it:
+   - copies itself to `%LOCALAPPDATA%\Eave`
+   - starts with Windows (a per-user startup entry)
+   - adds Start menu entries ("Eave" and "Eave Studio") and an entry in Settings → Apps
+   - adds hooks to `~/.claude/settings.json` so Claude Code reports to Eave (a timestamped backup is saved first)
 3. Start a new Claude Code session.
 
-Uninstall from Windows Settings → Apps → Eave (this also removes the Claude Code hooks).
+Uninstall from Windows Settings → Apps → Eave, or run `Eave.exe --uninstall`. This removes the app, the startup
+entry, the shortcuts and the Claude Code hooks.
 
 ## Privacy
 
@@ -71,8 +75,10 @@ Free code signing provided by [SignPath.io](https://signpath.io), certificate by
 Release builds are produced by GitHub Actions from this repository (`.github/workflows/release.yml`)
 and signed through SignPath. Only builds from tagged versions in this repository are signed.
 
-- Committers and reviewers: the members of this repository
-- Approvers: the repository owner
+- Committers and reviewers: [Shish9](https://github.com/Shish9)
+- Approvers: [Shish9](https://github.com/Shish9)
+
+Every release is built from a tagged version of this repository, and each signing request is approved manually.
 
 ### Privacy policy
 

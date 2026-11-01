@@ -27,7 +27,12 @@ public partial class App : System.Windows.Application
         Brand.MigrateData();
 
         // Command-line modes used by Setup.exe and the uninstall entry; they never show UI.
-        if (e.Args.Contains("--install")) { Try(Registration.InstallSelf); Shutdown(); return; }
+        if (e.Args.Contains("--install"))
+        {
+            if (e.Args.Contains("--silent") || ConfirmInstall()) Try(Registration.InstallSelf);
+            Shutdown();
+            return;
+        }
         if (e.Args.Contains("--register")) { Try(Registration.Register); Shutdown(); return; }
         if (e.Args.Contains("--uninstall")) { Try(Registration.Uninstall); Shutdown(); return; }
         if (e.Args.Contains("--install-hooks")) { Try(() => HookInstaller.Apply(false)); Shutdown(); return; }
@@ -95,6 +100,18 @@ public partial class App : System.Windows.Application
     }
 
     static void Try(Action a) { try { a(); } catch { } }
+
+    /// Installing changes the user's system, so say exactly what will change and let them decline.
+    static bool ConfirmInstall() => System.Windows.MessageBox.Show(
+        "Eave will make these changes for your Windows account:\n\n" +
+        "  • copy itself to " + Brand.InstallDir + "\n" +
+        "  • start with Windows (a per-user startup entry)\n" +
+        "  • add Start menu shortcuts and an entry in Settings > Apps\n" +
+        "  • add hooks to your Claude Code settings (~/.claude/settings.json) so it can report to Eave;\n" +
+        "     a backup of that file is saved first\n\n" +
+        "You can remove all of this later from Settings > Apps.\n\nContinue?",
+        "Install Eave", System.Windows.MessageBoxButton.OKCancel, System.Windows.MessageBoxImage.Question)
+        == System.Windows.MessageBoxResult.OK;
 
     /// The exe's own icon (eave.ico, embedded at build time) for the tray.
     static Icon AppIcon()
