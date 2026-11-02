@@ -29,7 +29,11 @@
   #frame { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: #000; transform-origin: 0 0; }
   body.render #frame { position: absolute; left: 0; top: 0; }
 
-  #cam { position: absolute; inset: 0; transform-origin: 960px 0; will-change: transform; }
+  #cam { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; will-change: transform; }
+  #bg { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; display: none; }
+  body.vertical #frame { width: 1080px; height: 1920px; }
+  body.vertical #bg { display: block; }
+  body.vertical #desk { box-shadow: 0 0 0 1px rgba(255,255,255,.08), 0 30px 80px rgba(0,0,0,.6); }
   #desk { position: absolute; inset: 0; will-change: filter; }
 
   /* ---------- drawn Windows 11 desktop (replaced by assets/desktop.png if present) ---------- */
@@ -108,10 +112,17 @@
   /* ---------- end card ---------- */
   #end { position: absolute; inset: 0; background: #f7f7f8; }
   #end .group { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
-  #mark { position: absolute; left: 50%; top: 286px; width: 300px; margin-left: -150px; }
+  #mark { position: absolute; left: 50%; top: 280px; width: 320px; margin-left: -160px; }
   #wordmark { position: absolute; left: 50%; top: 520px; width: 380px; margin-left: -190px; }
   #tagline { position: absolute; left: 0; right: 0; top: 688px; text-align: center; font-size: 34px; color: #55565c;
              letter-spacing: -.01em; }
+  #credit { position: absolute; left: 0; right: 0; top: 930px; text-align: center; font-size: 20px; color: #8a8b92;
+            letter-spacing: .02em; }
+  #credit b { color: #2f3034; font-weight: 600; }
+  body.vertical #mark { top: 560px; width: 480px; margin-left: -240px; }
+  body.vertical #wordmark { top: 900px; width: 540px; margin-left: -270px; }
+  body.vertical #tagline { top: 1100px; font-size: 48px; padding: 0 60px; }
+  body.vertical #credit { top: 1230px; font-size: 30px; }
 
   #fade { position: absolute; inset: 0; background: #000; pointer-events: none; }
   #start { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(0,0,0,.55);
@@ -121,6 +132,7 @@
 </head>
 <body>
 <div id="viewport"><div id="frame">
+  <div id="bg"></div>
   <div id="cam">
     <div id="desk">
       <div class="drawn" id="wall"></div>
@@ -211,6 +223,12 @@
         <div class="toast" id="t2" style="left:1532px;top:724px">
           <div class="hd"><i style="background:#2bb673"></i>Downloads<b>now</b></div>
           <h4>Download complete</h4><p>eave-0.3.1-win-x64.zip · 24 MB</p></div>
+        <div class="toast" id="t4" style="left:120px;top:640px">
+          <div class="hd"><i style="background:#7b61ff"></i>Mail<b>now</b></div>
+          <h4>Invoice #2041</h4><p>Your receipt from Studio Supply is attached.</p></div>
+        <div class="toast" id="t5" style="left:760px;top:430px">
+          <div class="hd"><i style="background:#3a3a3a;outline:1px solid #777"></i>Windows Update<b>now</b></div>
+          <h4>Restart required</h4><p>Updates are ready to install tonight.</p></div>
         <div class="toast" id="t3" style="left:1180px;top:96px">
           <div class="hd"><i style="background:#f2994a"></i>Calendar<b>in 30 min</b></div>
           <h4>Design review</h4><p>10:30 – 11:00 · Studio room</p></div>
@@ -229,17 +247,17 @@
         <!-- home / open -->
         <div class="panel" id="p-home" style="width:400px">
           <div class="eyebrow" style="position:absolute;left:24px;top:22px">Monday, November 2</div>
-          <div style="position:absolute;left:24px;top:40px;font-size:27px;font-weight:600;letter-spacing:-.01em">Good morning</div>
+          <div id="htitle" style="position:absolute;left:24px;top:40px;font-size:27px;font-weight:600;letter-spacing:-.01em">Good morning</div>
           <div style="position:absolute;right:22px;top:30px;display:flex;gap:8px">
-            <div class="chip"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3v7.5A2.2 2.2 0 1 1 4.6 8.5V3L13 1.5V9a2.2 2.2 0 1 1-1.4-2V4z" fill="#ff9a62"/></svg></div>
-            <div class="chip"><svg width="16" height="16" viewBox="0 0 16 16"><g stroke="#d97757" stroke-width="2" stroke-linecap="round"><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2"/></g></svg></div>
-            <div class="chip"><svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="4" fill="#ffc94d"/><g stroke="#ffc94d" stroke-width="1.6" stroke-linecap="round"><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M3.3 14.7l1.4-1.4M13.3 4.7l1.4-1.4"/></g></svg></div>
+            <div class="chip" id="chip0"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6 3v7.5A2.2 2.2 0 1 1 4.6 8.5V3L13 1.5V9a2.2 2.2 0 1 1-1.4-2V4z" fill="#ff9a62"/></svg></div>
+            <div class="chip" id="chip1"><svg width="16" height="16" viewBox="0 0 16 16"><g stroke="#d97757" stroke-width="2" stroke-linecap="round"><path d="M8 1.5v13M1.5 8h13M3.4 3.4l9.2 9.2M12.6 3.4l-9.2 9.2"/></g></svg></div>
+            <div class="chip" id="chip2"><svg width="18" height="18" viewBox="0 0 18 18"><circle cx="9" cy="9" r="4" fill="#ffc94d"/><g stroke="#ffc94d" stroke-width="1.6" stroke-linecap="round"><path d="M9 1v2M9 15v2M1 9h2M15 9h2M3.3 3.3l1.4 1.4M13.3 13.3l1.4 1.4M3.3 14.7l1.4-1.4M13.3 4.7l1.4-1.4"/></g></svg></div>
           </div>
         </div>
 
         <!-- music -->
         <div class="panel" id="p-music">
-          <div style="position:absolute;left:20px;top:18px;width:78px;height:78px;border-radius:16px;overflow:hidden">
+          <div id="artbox" style="position:absolute;left:20px;top:18px;width:78px;height:78px;border-radius:16px;overflow:hidden">
             <svg width="78" height="78" viewBox="0 0 78 78">
               <defs><linearGradient id="art" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffb36b"/><stop offset=".55" stop-color="#ff6b8b"/><stop offset="1" stop-color="#6a3dd8"/></linearGradient></defs>
               <rect width="78" height="78" fill="url(#art)"/>
@@ -253,7 +271,7 @@
           <div id="wave" style="position:absolute;right:24px;top:24px;height:24px;display:flex;align-items:center;gap:3px"></div>
           <div style="position:absolute;left:114px;top:76px;display:flex;gap:6px;align-items:center">
             <div class="ctl"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M3 2v12M14 2.5v11L5.5 8z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
-            <div class="ctl main"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2.5" y="1.5" width="3" height="11" rx="1" fill="#000"/><rect x="8.5" y="1.5" width="3" height="11" rx="1" fill="#000"/></svg></div>
+            <div class="ctl main" id="pbtn"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="2.5" y="1.5" width="3" height="11" rx="1" fill="#000"/><rect x="8.5" y="1.5" width="3" height="11" rx="1" fill="#000"/></svg></div>
             <div class="ctl"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M13 2v12M2 2.5v11L10.5 8z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
           </div>
           <div style="position:absolute;left:20px;right:20px;top:118px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--fg3);font-variant-numeric:tabular-nums">
@@ -318,13 +336,10 @@
 
   <div id="end">
     <div class="group">
-      <svg id="mark" viewBox="0 0 512 307">
-        <path id="markPill" fill="#2f3034" fill-rule="evenodd"
-          d="M154 28h44a58 58 0 0 0 116 0h44a125 125 0 0 1 0 250H154a125 125 0 0 1 0-250z"/>
-        <circle id="markDot" cx="256" cy="171" r="57" fill="#0a7bff"/>
-      </svg>
+      <img id="mark" src="assets/mark.png" alt="Eave logo">
       <img id="wordmark" src="assets/wordmark.png" alt="eave">
       <div id="tagline">Everything you need, right up top.</div>
+      <div id="credit">Made by <b>CodebyAmed</b></div>
     </div>
   </div>
 
@@ -362,8 +377,9 @@ function track(t, kf) {
 // visible between [a,b] with fade in/out durations
 const win = (t, a, b, fi = .5, fo = .4) => Math.min(prog(t, a, a + fi), 1 - prog(t, b - fo, b));
 
-const DURATION = 25.4;
-const BPM = 96, BEAT = 60 / BPM, MUSIC_START = 7.0;
+// Timed to the voice-over (assets/vo/voiceover.wav, placed at 0.6 s). Cue words are noted next to each beat.
+const DURATION = 52.0;
+const BPM = 96, BEAT = 60 / BPM, MUSIC_START = 11.8;
 
 // ---------- static builders ----------
 const waveEl = $('wave');
@@ -392,19 +408,32 @@ function notchPath(w, h) {
     `L${w + rt - rb} ${h}A${rb} ${rb} 0 0 0 ${w + rt} ${h - rb}L${w + rt} ${rt}A${rt} ${rt} 0 0 1 ${w + 2 * rt} 0Z`;
 }
 
+// ---------- format ----------
+const params = new URLSearchParams(location.search);
+const VERT = params.get('format') === 'vertical';   // 1080x1920 for Reels / TikTok / Shorts
+if (VERT) document.body.classList.add('vertical');
+const W = VERT ? 1080 : 1920, H = VERT ? 1920 : 1080;
+
 // ---------- tracks ----------
 const SIZE = [ // [w, h]
-  [0, [190, 38]], [4.25, [190, 38]], [5.25, [400, 104], 'spring'], [6.95, [400, 104]],
-  [7.6, [452, 144], 'spring'], [12.0, [452, 144]], [12.6, [452, 124], 'io'],
-  [14.15, [452, 124]], [14.75, [452, 272], 'spring'], [15.35, [452, 272]], [15.85, [452, 124], 'io'],
-  [16.0, [452, 124]], [16.6, [452, 172], 'spring'], [17.45, [452, 172]], [17.95, [452, 244], 'spring'],
-  [18.35, [452, 244]], [18.85, [452, 312], 'spring'], [20.0, [452, 312]], [20.95, [190, 38], 'io5'],
+  [0, [190, 38]], [10.3, [190, 38]], [11.2, [400, 104], 'spring'], [11.8, [400, 104]],          // "top of Windows"
+  [12.4, [452, 144], 'spring'], [18.1, [452, 144]], [18.7, [452, 124], 'io'],                   // music → Claude
+  [22.95, [452, 124]], [23.55, [452, 272], 'spring'], [24.4, [452, 272]], [24.9, [452, 124], 'io'], // "open it" … "get back to it"
+  [25.75, [452, 124]], [26.35, [452, 96], 'spring'], [28.6, [452, 96]], [29.2, [452, 172], 'spring'], // weather, "hours ahead"
+  [31.15, [452, 172]], [31.65, [452, 244], 'spring'], [32.95, [452, 244]], [33.45, [452, 312], 'spring'], // meeting, download
+  [38.2, [452, 312]], [38.9, [400, 104], 'io'], [42.9, [400, 104]], [43.8, [190, 38], 'io5'],   // "brings … together", "one glance"
 ];
-const ZOOM = [[0, 1.0], [2.8, 1.008, 'lin'], [4.8, 1.9, 'io5'], [20.3, 2.0, 'lin'], [21.9, 1.0, 'io5']];
+const ZOOM = VERT
+  ? [[0, .5625], [7.3, .568, 'lin'], [9.4, 2.0, 'io5'], [43.8, 2.1, 'lin'], [45.6, .5625, 'io5']]
+  : [[0, 1.0], [7.3, 1.008, 'lin'], [9.4, 1.9, 'io5'], [43.8, 2.0, 'lin'], [45.6, 1.0, 'io5']];
+const TOP = VERT
+  ? [[0, 656], [7.3, 656], [9.4, 440, 'io5'], [43.8, 440], [45.6, 656, 'io5']]
+  : [[0, 0]];
+const BLUE = [10, 123, 255], ORANGE = [255, 140, 96], CLAY = [217, 119, 87], SKY = [84, 160, 255];
 const GLOW = [ // rgb + strength
-  [0, [10, 123, 255, .0]], [4.3, [10, 123, 255, .0]], [5.2, [46, 134, 255, .55]], [6.9, [46, 134, 255, .55]],
-  [7.6, [255, 140, 96, .7]], [11.9, [255, 140, 96, .7]], [12.6, [217, 119, 87, .65]], [15.9, [217, 119, 87, .65]],
-  [16.6, [84, 160, 255, .6]], [19.9, [84, 160, 255, .6]], [20.9, [10, 123, 255, 0]],
+  [0, [...BLUE, 0]], [10.3, [...BLUE, 0]], [11.2, [46, 134, 255, .55]], [11.8, [46, 134, 255, .55]],
+  [12.4, [...ORANGE, .7]], [17.9, [...ORANGE, .7]], [18.6, [...CLAY, .65]], [25.6, [...CLAY, .65]],
+  [26.3, [...SKY, .6]], [38.0, [...SKY, .6]], [38.9, [46, 134, 255, .5]], [42.9, [46, 134, 255, .5]], [43.9, [...BLUE, 0]],
 ];
 
 function setPanel(id, vis, dx = 0, dy = 0) {
@@ -416,31 +445,35 @@ function setPanel(id, vis, dx = 0, dy = 0) {
   el.style.transform = `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px)`;
 }
 
-function toast(id, t, a, freezeAt, fromX, fromY) {
-  const tt = Math.min(t, freezeAt);
+const FREEZE = 6.0; // everything pauses mid-motion on "wherever they like"
+function toast(id, t, a, fromX, fromY) {
+  const tt = Math.min(t, FREEZE);
   const x = prog(tt, a, a + .55), e = ease.back(x);
-  const out = prog(t, 3.9, 4.5);
+  const out = prog(t, 7.9, 8.6);
   const el = $(id);
   el.style.opacity = (Math.min(1, x * 2.2) * (1 - out)).toFixed(3);
   el.style.transform = `translate(${lerp(fromX, 0, e)}px, ${lerp(fromY, 0, e)}px) scale(${lerp(.94, 1, e)})`;
   el.style.display = x <= 0 || out >= 1 ? 'none' : 'block';
 }
+const bump = (t, at, w = 10) => Math.exp(-Math.pow((t - at) * w, 2));
 
 function render(t) {
   // camera
-  const z = track(t, ZOOM);
-  $('cam').style.transform = `scale(${z.toFixed(5)})`;
+  const z = track(t, ZOOM), ty = track(t, TOP);
+  $('cam').style.transform = `translate(${(W / 2 - 960 * z).toFixed(2)}px, ${ty.toFixed(2)}px) scale(${z.toFixed(5)})`;
 
   // desktop: wake from black, then soften behind the island, then return
-  const dim = track(t, [[0, 0], [4.2, 0], [5.4, 1, 'io'], [20.5, 1], [21.9, 0, 'io']]);
+  const dim = track(t, [[0, 0], [10.2, 0], [11.4, 1, 'io'], [43.8, 1], [45.4, 0, 'io']]);
   const wake = ease.out(prog(t, 0, 1.1));
-  const freeze = win(t, 2.55, 2.9, .05, .3); // the "pause mid-motion" beat
+  const freeze = win(t, FREEZE, 7.6, .05, .4);
   $('desk').style.filter = `brightness(${(lerp(.25, 1, wake) * lerp(1, .52, dim)).toFixed(3)}) ` +
-    `saturate(${lerp(1, .8, dim) * lerp(1, .75, freeze)}) blur(${(dim * 5).toFixed(2)}px)`;
+    `saturate(${lerp(1, .8, dim) * lerp(1, .7, freeze)}) blur(${(dim * 5).toFixed(2)}px)`;
 
-  toast('t1', t, 0.7, 2.55, 420, 0);
-  toast('t2', t, 1.35, 2.55, 420, 0);
-  toast('t3', t, 2.2, 2.55, 0, -40);   // caught mid-flight when everything pauses
+  toast('t1', t, 2.65, 420, 0);   // "Messages"
+  toast('t2', t, 3.10, 420, 0);   // "downloads"
+  toast('t3', t, 3.90, 0, -40);   // "reminders"
+  toast('t4', t, 4.85, -60, 30);  // "popping up"
+  toast('t5', t, 5.70, 0, 50);    // "wherever" — caught mid-flight by the pause
 
   // island shape
   const [w, h] = track(t, SIZE);
@@ -451,8 +484,9 @@ function render(t) {
   svg.setAttribute('viewBox', `-100 -100 ${w + 2 * rt + 200} ${h + 200}`);
   $('shapePath').setAttribute('d', notchPath(w, h));
   const [gr, gg, gb, gs] = track(t, GLOW);
-  const idleGlow = 0.18 + 0.12 * Math.sin(t * 3) * (t < 4.2 ? 1 : 0);
-  const s = Math.max(gs, t < 4.3 ? idleGlow * prog(t, 1.2, 2.2) : 0);
+  const pulse = bump(t, 9.1, 2.6); // "a calm little notch"
+  const idleGlow = (0.16 + 0.1 * Math.sin(t * 3)) * prog(t, 1.2, 2.2) * (1 - prog(t, 10.2, 10.5)) + .5 * pulse;
+  const s = Math.max(gs, idleGlow);
   svg.style.filter = s > .01 ? `drop-shadow(0 0 22px rgba(${gr|0},${gg|0},${gb|0},${s.toFixed(3)})) drop-shadow(0 6px 30px rgba(${gr|0},${gg|0},${gb|0},${(s * .6).toFixed(3)}))` : 'none';
 
   const body = $('body');
@@ -460,27 +494,34 @@ function render(t) {
   body.style.left = (-w / 2) + 'px'; body.style.width = w + 'px'; body.style.height = h + 'px';
   body.style.borderRadius = `0 0 ${rb}px ${rb}px`;
 
-  // idle dot: breathes, pulses as the camera arrives
-  const idle = 1 - prog(t, 4.2, 4.5) + prog(t, 20.8, 21.1);
+  // idle dot: breathes, pulses as Eave is introduced
+  const idle = 1 - prog(t, 10.3, 10.6) + prog(t, 43.6, 43.9);
   setPanel('p-idle', clamp(idle));
-  const pulse = Math.exp(-Math.pow((t - 2.75) * 3, 2));
   const dot = $('idot');
   dot.style.left = (w / 2 - 5) + 'px';
   dot.style.boxShadow = `0 0 ${8 + 16 * pulse}px rgba(10,123,255,${.6 + .4 * pulse})`;
-  dot.style.transform = `scale(${1 + .35 * pulse})`;
+  dot.style.transform = `scale(${1 + .4 * pulse})`;
 
   // panels are laid out against the full width; centre them in the body
   const off = (w - 452) / 2;
-  const home = win(t, 4.42, 7.05, .55, .45);
-  setPanel('p-home', home, (w - 400) / 2 - 40 * prog(t, 6.6, 7.05), 8 * (1 - prog(t, 4.42, 5.0)));
-  const mus = win(t, 7.0, 12.25, .55, .45);
-  setPanel('p-music', mus, off + 46 * (1 - ease.out(prog(t, 7.0, 7.6))) - 46 * prog(t, 11.8, 12.25));
-  const cl = win(t, 12.05, 16.1, .5, .45);
-  setPanel('p-claude', cl, off + 46 * (1 - ease.out(prog(t, 12.05, 12.6))) - 46 * prog(t, 15.65, 16.1));
-  const we = win(t, 16.05, 20.55, .5, .55);
-  setPanel('p-weather', we, off + 46 * (1 - ease.out(prog(t, 16.05, 16.6))), -14 * prog(t, 20.0, 20.55));
+  const home1 = win(t, 10.45, 12.1, .55, .4), home2 = win(t, 38.55, 43.4, .5, .45);
+  $('htitle').textContent = t < 30 ? 'Good morning' : 'All at a glance';
+  setPanel('p-home', Math.max(home1, home2), (w - 400) / 2 - 40 * prog(t, 11.7, 12.1) * (t < 30),
+    8 * (1 - prog(t, 10.45, 11.0)) + 8 * (1 - prog(t, 38.55, 39.1)) * (t > 30));
+  ['chip0', 'chip1', 'chip2'].forEach((id, i) => {   // "the little things … together"
+    const b = bump(t, 39.05 + i * .35, 5);
+    const c = [ORANGE, CLAY, [255, 201, 77]][i];
+    $(id).style.transform = `scale(${1 + .22 * b})`;
+    $(id).style.boxShadow = b > .01 ? `0 0 ${18 * b}px rgba(${c},${.9 * b}), inset 0 0 0 1.5px rgba(${c},${b})` : 'none';
+  });
+  const mus = win(t, 11.8, 18.25, .55, .45);
+  setPanel('p-music', mus, off + 46 * (1 - ease.out(prog(t, 11.8, 12.4))) - 46 * prog(t, 17.8, 18.25));
+  const cl = win(t, 18.05, 26.0, .5, .45);
+  setPanel('p-claude', cl, off + 46 * (1 - ease.out(prog(t, 18.05, 18.6))) - 46 * prog(t, 25.55, 26.0));
+  const we = win(t, 25.85, 38.6, .5, .55);
+  setPanel('p-weather', we, off + 46 * (1 - ease.out(prog(t, 25.85, 26.4))), -14 * prog(t, 38.0, 38.6));
 
-  // music: progress line + waveform following the beat
+  // music: progress line + waveform following the beat; "album art" and "controls" get a nudge
   if (mus > 0) {
     const sec = 72 + Math.max(0, t - MUSIC_START);
     $('mprog').style.width = (sec / 221 * 100).toFixed(2) + '%';
@@ -490,42 +531,51 @@ function render(t) {
       const k = Math.abs(Math.sin(t * (5.1 + i * 1.7) + i * 1.3));
       b.style.height = (5 + 19 * (.25 + .75 * env) * (.35 + .65 * k)).toFixed(1) + 'px';
     });
+    const ab = bump(t, 14.6, 4);
+    $('artbox').style.transform = `scale(${1 + .07 * ab})`;
+    $('artbox').style.boxShadow = `0 0 ${30 * ab}px rgba(255,140,96,${.7 * ab})`;
+    const pb = bump(t, 16.0, 4);
+    $('pbtn').style.transform = `scale(${1 + .15 * pb - .12 * bump(t, 16.05, 14)})`;
+    $('pbtn').style.boxShadow = `0 0 0 ${6 * pb}px rgba(255,255,255,${.25 * pb})`;
   }
 
-  // claude: typed preview with a soft glow at the caret, tap to open, folds back
+  // claude: typed preview with a soft glow at the caret ("your summary is ready"), tap to open, folds back
   if (cl > 0) {
-    const n = Math.floor(CLAUDE_TEXT.length * prog(t, 12.45, 13.75));
-    const typing = t < 13.95;
+    const n = Math.floor(CLAUDE_TEXT.length * prog(t, 20.9, 22.1));
+    const typing = t < 22.4;
     const caretOn = typing && (Math.floor(t * 4) % 2 === 0 || n < CLAUDE_TEXT.length);
     const head = CLAUDE_TEXT.slice(0, Math.max(0, n - 6)), tail = CLAUDE_TEXT.slice(Math.max(0, n - 6), n);
     $('ctext').innerHTML = head + `<span style="color:#fff;text-shadow:0 0 10px rgba(255,170,130,.95),0 0 18px rgba(217,119,87,.8)">${tail}</span>` +
       (caretOn ? '<span style="display:inline-block;width:7px;height:15px;margin-left:2px;vertical-align:-2px;background:#d97757;border-radius:1px;box-shadow:0 0 10px #d97757"></span>' : '');
-    const full = win(t, 14.3, 15.6, .45, .35);
+    const full = win(t, 23.2, 24.9, .45, .35);
     $('cfull').style.opacity = full.toFixed(3);
     $('cfull').style.transform = `translateY(${(1 - full) * 10}px)`;
   }
 
-  // weather: stacked rows arrive one at a time
+  // weather: forecast on "the hours ahead", then the meeting and the download stack in
   if (we > 0) {
-    const r1 = ease.out(prog(t, 17.55, 18.05)), r2 = ease.out(prog(t, 18.45, 18.95));
-    const tuck1 = prog(t, 19.95, 20.3), tuck2 = prog(t, 19.85, 20.2);
-    $('r-cal').style.opacity = (r1 * (1 - tuck1)).toFixed(3);
-    $('r-cal').style.transform = `translateY(${(1 - r1) * 16 - tuck1 * 20}px) scale(${lerp(.96, 1, r1)})`;
-    $('r-dl').style.opacity = (r2 * (1 - tuck2)).toFixed(3);
-    $('r-dl').style.transform = `translateY(${(1 - r2) * 16 - tuck2 * 30}px) scale(${lerp(.96, 1, r2)})`;
+    [...fc.children].forEach((c, i) => {
+      const f = ease.out(prog(t, 28.6 + i * .1, 29.0 + i * .1));
+      c.style.opacity = f; c.style.transform = `translateY(${(1 - f) * 10}px)`;
+    });
+    const r1 = ease.out(prog(t, 31.15, 31.65)), r2 = ease.out(prog(t, 32.95, 33.45));
+    $('r-cal').style.opacity = r1.toFixed(3);
+    $('r-cal').style.transform = `translateY(${(1 - r1) * 16}px) scale(${lerp(.96, 1, r1)})`;
+    $('r-dl').style.opacity = r2.toFixed(3);
+    $('r-dl').style.transform = `translateY(${(1 - r2) * 16}px) scale(${lerp(.96, 1, r2)})`;
   }
 
-  // the tap on the Claude card (cursor counter-scaled so it stays a normal on-screen size)
+  // the tap on the Claude card ("peek at it, open it") — cursor counter-scaled to a normal on-screen size
   const cur = $('cursor');
-  const cv = win(t, 13.35, 15.25, .3, .35);
+  const cv = win(t, 21.9, 24.9, .3, .35);
   if (cv > 0) {
-    const mv = ease.io(prog(t, 13.35, 14.0));
-    const cx = lerp(240, 150, mv), cy = lerp(300, 52, mv) + 10 * ease.io(prog(t, 14.6, 15.25));
-    const press = 1 - .14 * Math.exp(-Math.pow((t - 14.08) * 14, 2));
+    const mv = ease.io(prog(t, 21.9, 22.7));
+    const cx = lerp(240, 150, mv), cy = lerp(300, 52, mv) + 10 * ease.io(prog(t, 24.3, 24.9));
+    const press = 1 - .14 * bump(t, 23.0, 14);
     cur.style.display = 'block'; cur.style.opacity = cv.toFixed(3);
-    cur.style.transform = `translate(${cx}px, ${cy}px) scale(${(1.15 / z * press).toFixed(4)})`;
+    cur.style.transform = `translate(${cx}px, ${cy}px) scale(${((VERT ? 1.7 : 1.15) / z * press).toFixed(4)})`;
   } else cur.style.display = 'none';
-  const rp = prog(t, 14.08, 14.6), rip = $('ripple');
+  const rp = prog(t, 23.0, 23.5), rip = $('ripple');
   if (rp > 0 && rp < 1) {
     const r = lerp(4, 46, ease.out(rp));
     rip.style.display = 'block'; rip.style.opacity = (1 - rp) * .8;
@@ -533,26 +583,25 @@ function render(t) {
     rip.style.width = rip.style.height = 2 * r + 'px';
   } else rip.style.display = 'none';
 
-  // end card: a soft white sheet drops out of the notch, then the mark and line
-  const sheet = ease.io5(prog(t, 21.85, 22.75));
+  // end card: a soft white sheet drops out of the notch; logo on "Eave", line on "Everything you need"
+  const sheet = ease.io5(prog(t, 45.75, 46.65));
   const end = $('end');
   end.style.display = sheet > 0 ? 'block' : 'none';
-  end.style.clipPath = `circle(${(sheet * 2300).toFixed(1)}px at 960px 0px)`;
-  const m = ease.out(prog(t, 22.45, 23.15));
-  $('mark').style.opacity = m;
-  $('mark').style.transform = `translateY(${(1 - m) * 24}px) scale(${lerp(.92, 1, m)})`;
-  const dp = ease.back(prog(t, 22.85, 23.35));
-  $('markDot').setAttribute('r', (57 * dp).toFixed(2));
-  const wm = ease.out(prog(t, 23.15, 23.75));
+  end.style.clipPath = `circle(${(sheet * 2400).toFixed(1)}px at ${W / 2}px ${ty.toFixed(1)}px)`;
+  const m = ease.back(prog(t, 46.6, 47.3));
+  $('mark').style.opacity = clamp(m);
+  $('mark').style.transform = `translateY(${(1 - m) * 24}px) scale(${lerp(.9, 1, m)})`;
+  const wm = ease.out(prog(t, 46.95, 47.55));
   $('wordmark').style.opacity = wm; $('wordmark').style.transform = `translateY(${(1 - wm) * 16}px)`;
-  const tl = ease.out(prog(t, 23.6, 24.25));
+  const tl = ease.out(prog(t, 48.25, 48.9));
   $('tagline').style.opacity = tl; $('tagline').style.transform = `translateY(${(1 - tl) * 12}px)`;
+  const cr = ease.out(prog(t, 49.7, 50.3));
+  $('credit').style.opacity = cr; $('credit').style.transform = `translateY(${(1 - cr) * 10}px)`;
 
-  $('fade').style.opacity = (1 - prog(t, 0, .35)) * 1 + 0;
+  $('fade').style.opacity = 1 - prog(t, 0, .35);
 }
 
 // ---------- boot ----------
-const params = new URLSearchParams(location.search);
 const shot = $('shot');
 const ready = new Promise(res => {
   const src = params.get('desktop') || 'assets/desktop.png';
@@ -563,13 +612,24 @@ const ready = new Promise(res => {
   [...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; }))));
 window.seek = t => render(t);
 window.DURATION = DURATION;
-window.teaserReady = ready.then(() => true);
+window.teaserReady = ready.then(() => {
+  if (VERT) { // blurred, enlarged copy of the desktop fills the tall frame behind the screen
+    const c = $('desk').cloneNode(true);
+    c.querySelectorAll('#toasts').forEach(e => e.remove());
+    c.removeAttribute('id'); c.querySelectorAll('[id]').forEach(e => e.removeAttribute('id'));
+    c.style.filter = 'blur(28px) brightness(.42) saturate(1.2)';
+    const k = H / 1080 * 1.05;
+    const bg = $('bg'); bg.appendChild(c);
+    bg.style.transform = `translate(${W / 2 - 960 * k}px, ${H / 2 - 540 * k}px) scale(${k})`;
+  }
+  return true;
+});
 
 function fit() {
   if (document.body.classList.contains('render')) return;
-  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  const s = Math.min(innerWidth / W, innerHeight / H);
   const f = $('frame'); f.style.transform = `scale(${s})`;
-  f.style.marginRight = (1920 * s - 1920) + 'px'; f.style.marginBottom = (1080 * s - 1080) + 'px';
+  f.style.marginRight = (W * s - W) + 'px'; f.style.marginBottom = (H * s - H) + 'px';
 }
 addEventListener('resize', fit);
 

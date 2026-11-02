@@ -3,8 +3,8 @@ all placed on the same timeline as teaser.html. Needs numpy only.
 
     python3 audio.py            # writes assets/teaser-audio.wav
 
-Voice-over lines are read from assets/vo/l1.wav … l5.wav (mono, 48 kHz). Replace them with a real
-recording any time and re-run; the timings live in VO below.
+The voice-over is assets/vo/voiceover.wav (mono, 48 kHz), one continuous take placed at VO_AT.
+The picture in teaser.html is timed to its words, so a new take needs the same pacing (or new cue times).
 """
 import wave
 from pathlib import Path
@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 
 SR = 48000
-DUR = 25.4
+DUR = 52.0
 HERE = Path(__file__).parent
 rng = np.random.default_rng(7)
 
@@ -22,8 +22,8 @@ mus = np.zeros((N, 2))   # music bed (ducked under voice)
 sfx = np.zeros((N, 2))   # UI sounds
 vo = np.zeros(N)         # narration
 
-VO = [(7.45, 'l1'), (12.45, 'l2'), (16.35, 'l3'), (18.1, 'l4'), (22.75, 'l5')]
-BPM, MUSIC_START, MUSIC_END = 96, 7.0, 12.35
+VO_AT = 0.6
+BPM, MUSIC_START, MUSIC_END = 96, 11.8, 18.35
 BEAT = 60 / BPM
 
 
@@ -103,6 +103,10 @@ def thump(f0=140, f1=70, dur=0.35):
     return np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 11)
 
 
+def tap():
+    return np.pad(click(.04, 1800), (0, int(.04 * SR))) + thump(400, 260, .08) * .4
+
+
 # ---------- ambience: a soft, slow chord that breathes ----------
 t = np.arange(N) / SR
 pad = np.zeros(N)
@@ -111,21 +115,24 @@ for i, n in enumerate(['C3', 'G3', 'B3', 'D4', 'E4']):
     pad += np.sin(2 * np.pi * f * t + i) * (0.8 + 0.2 * np.sin(2 * np.pi * (0.07 + i * 0.03) * t))
     pad += 0.3 * np.sin(2 * np.pi * f * 1.003 * t)
 pad = onepole(pad / 6, 900)
-amb_env = np.interp(t, [0, 1.6, 4.0, 7.0, 7.6, 12.3, 13.0, 21.8, 23.0, DUR - 0.6, DUR],
+amb_env = np.interp(t, [0, 1.6, 7.0, 11.0, 11.8, 18.2, 19.0, 45.5, 46.8, DUR - 0.8, DUR],
                        [0, .9, 1, .8, .35, .35, .8, .8, 1.15, 1.1, 0])
 amb[:, 0] += pad * amb_env * 0.11
 amb[:, 1] += np.roll(pad, 240) * amb_env * 0.11
-room = onepole(rng.standard_normal(N), 500) * 0.03 * np.interp(t, [0, 1, 4.5, 6, 20.8, 22], [0, 1, 1, .4, .4, 0])
+room = onepole(rng.standard_normal(N), 500) * 0.03 * np.interp(t, [0, 1, 9, 11, 44.5, 46], [0, 1, 1, .4, .4, 0])
 amb += room[:, None]
 
-# ---------- 0-4 s: desktop notifications, the pause, the glide ----------
-for at, notes, pan in [(0.7, ['E6', 'B5'], .45), (1.35, ['G#5', 'E6'], .5), (2.2, ['C#6', 'A5'], .2)]:
-    put(sfx, at, reverb(chime([hz(n) for n in notes], 1.3), 1.2, .3), 0.16, pan)
-put(sfx, 2.55, reverb(click(0.05, 900), 1.5, .5), 0.12)                     # the freeze
-put(sfx, 2.75, whoosh(2.0, 1.55, 200, 3800), 0.20)                           # glide to the notch
-put(sfx, 4.25, reverb(np.pad(thump(220, 110, .5), (0, int(.9 * SR))) * .6 + chime([hz('E5'), hz('B5')], 1.4, .4) * .5, 1.8, .35), 0.32)  # Eave opens
+# ---------- desktop: toasts on "Messages, downloads, reminders…", the pause, the glide ----------
+for at, notes, pan in [(2.65, ['E6', 'B5'], .45), (3.10, ['G#5', 'E6'], .5), (3.90, ['C#6', 'A5'], .2),
+                       (4.85, ['B5', 'F#6'], -.4), (5.70, ['A5', 'E6'], 0)]:
+    put(sfx, at, reverb(chime([hz(n) for n in notes], 1.3), 1.2, .3), 0.15, pan)
+put(sfx, 6.0, reverb(click(0.05, 900), 1.5, .5), 0.12)                        # the freeze
+put(sfx, 7.25, whoosh(2.2, 1.7, 200, 3800), 0.20)                              # "Meet Eave": glide to the notch
+put(sfx, 9.0, reverb(chime([hz('B5')], 1.6, .3), 1.6, .5), 0.07)               # "a calm little notch": dot pulse
+put(sfx, 10.3, reverb(np.pad(thump(220, 110, .5), (0, int(.9 * SR))) * .6
+                      + chime([hz('E5'), hz('B5')], 1.4, .4) * .5, 1.8, .35), 0.3)  # Eave opens
 
-# ---------- 7-12 s: music bed, in time with the waveform ----------
+# ---------- music bed, in time with the waveform ----------
 chords = [['F3', 'A3', 'C4', 'E4'], ['A3', 'C4', 'E4', 'G4'], ['D3', 'F3', 'A3', 'C4'], ['G3', 'B3', 'D4', 'F4']]
 mt = MUSIC_START
 beat_i = 0
@@ -150,52 +157,54 @@ mus_env = np.interp(t, [MUSIC_START - .1, MUSIC_START + .4, MUSIC_END - .6, MUSI
 mus *= mus_env[:, None] * 0.7
 mus[:, 0] = reverb(mus[:, 0], 1.2, .18)
 mus[:, 1] = reverb(mus[:, 1], 1.25, .18)
-put(sfx, 6.95, whoosh(.6, .35, 600, 6000), 0.09, .3)
+put(sfx, 11.75, whoosh(.6, .35, 600, 6000), 0.09, .3)
+put(sfx, 16.0, tap(), 0.12)                                                    # "controls": pause button
 
-# ---------- 12-16 s: Claude ----------
-put(sfx, 12.0, whoosh(.6, .35, 600, 6000), 0.09, -.3)
-put(sfx, 12.15, reverb(chime([hz('A5'), hz('E6')], 1.2), 1.4, .35), 0.12)
-tt = 12.45
-while tt < 13.75:                                                               # typing glow ticks
+# ---------- Claude ----------
+put(sfx, 18.0, whoosh(.6, .35, 600, 6000), 0.09, -.3)
+put(sfx, 18.15, reverb(chime([hz('A5'), hz('E6')], 1.2), 1.4, .35), 0.12)
+tt = 20.9
+while tt < 22.1:                                                                # typing glow ticks
     put(sfx, tt, click(.02, 3200 + rng.uniform(-400, 400)), 0.025, rng.uniform(-.2, .2))
     tt += rng.uniform(.045, .09)
-put(sfx, 14.08, np.pad(click(.04, 1800), (0, int(.04 * SR))) + thump(400, 260, .08) * .4, 0.22)               # the tap
-put(sfx, 14.15, whoosh(.55, .3, 400, 5000), 0.08)
-put(sfx, 15.35, whoosh(.5, .3, 300, 3000), 0.06)
+put(sfx, 23.0, tap(), 0.22)                                                    # "open it": the tap
+put(sfx, 23.05, whoosh(.55, .3, 400, 5000), 0.08)
+put(sfx, 24.4, whoosh(.5, .3, 300, 3000), 0.06)                                 # folds back
 
-# ---------- 16-20 s: weather and the day ----------
-put(sfx, 16.0, whoosh(.6, .35, 600, 6000), 0.09, .3)
-put(sfx, 16.15, reverb(chime([hz('G5'), hz('D6'), hz('G6')], 1.4), 1.6, .35), 0.11)
-put(sfx, 17.55, reverb(chime([hz('C6'), hz('E6')], 1.0), 1.2, .3), 0.10, -.2)
-put(sfx, 18.45, reverb(chime([hz('E6'), hz('A6')], 1.0), 1.2, .3), 0.08, .2)
+# ---------- weather and the day ----------
+put(sfx, 25.8, whoosh(.6, .35, 600, 6000), 0.09, .3)
+put(sfx, 25.95, reverb(chime([hz('G5'), hz('D6'), hz('G6')], 1.4), 1.6, .35), 0.11)
+for i in range(6):                                                              # "the hours ahead"
+    put(sfx, 28.6 + i * .1, click(.02, 2600 + i * 180), 0.02, -.5 + i * .2)
+put(sfx, 31.15, reverb(chime([hz('C6'), hz('E6')], 1.0), 1.2, .3), 0.10, -.2)    # "your next meeting"
+put(sfx, 32.95, reverb(chime([hz('E6'), hz('A6')], 1.0), 1.2, .3), 0.08, .2)     # "the download that just finished"
 
-# ---------- 20-25 s: tuck away, back to work, logo ----------
-put(sfx, 19.95, whoosh(.5, .25, 500, 5000), 0.08)
-put(sfx, 20.6, thump(160, 90, .3), 0.18)                                       # island closes
-put(sfx, 20.4, whoosh(1.6, .5, 4000, 300), 0.12)                                 # zoom out
-put(sfx, 21.8, whoosh(1.0, .7, 300, 6000), 0.14)                                 # the sheet
+# ---------- together, back to work, logo ----------
+put(sfx, 38.2, whoosh(.7, .35, 500, 5000), 0.09)
+for i, n in enumerate(['E5', 'G#5', 'B5']):                                     # "the little things … together"
+    put(sfx, 39.05 + i * .35, reverb(chime([hz(n)], .8, .5), 1.0, .3), 0.07, -.4 + .4 * i)
+put(sfx, 43.3, thump(160, 90, .3), 0.18)                                        # "one glance": island closes
+put(sfx, 43.6, whoosh(1.8, .5, 4000, 300), 0.12)                                # zoom out, back to work
+put(sfx, 45.7, whoosh(1.0, .7, 300, 6000), 0.14)                                # the sheet
 end = chime([hz('C5'), hz('E5'), hz('G5'), hz('B5'), hz('D6')], 3.0, .6)
-put(sfx, 22.85, reverb(end, 2.4, .45), 0.2)
+put(sfx, 46.75, reverb(end, 2.4, .45), 0.2)                                     # "Eave."
 
 # ---------- voice-over ----------
-for at, name in VO:
-    p = HERE / 'assets' / 'vo' / f'{name}.wav'
-    if not p.exists():
-        continue
+p = HERE / 'assets' / 'vo' / 'voiceover.wav'
+if p.exists():
     with wave.open(str(p)) as w:
         assert w.getframerate() == SR and w.getnchannels() == 1, f'{p} must be mono {SR} Hz'
         x = np.frombuffer(w.readframes(w.getnframes()), np.int16).astype(float) / 32768
-    put(vo, at, x, 1.0)
-vo = reverb(vo, .5, .08)
+    put(vo, VO_AT, x, 1.0)
 
 # duck beds under the voice (smoothed envelope)
-v_env = onepole(np.abs(vo) > 0.01, 6.0)
+v_env = onepole((np.abs(vo) > 0.01).astype(float), 6.0)
 v_env = np.clip(v_env * 3, 0, 1)
 duck = 1 - 0.5 * v_env
 mix = (amb + mus) * duck[:, None] + sfx + vo[:, None] * 0.9
 
 # fade out the last moment and normalise
-mix *= np.interp(t, [0, DUR - .5, DUR], [1, 1, 0])[:, None]
+mix *= np.interp(t, [0, DUR - .8, DUR], [1, 1, 0])[:, None]
 mix = np.tanh(mix * 1.1) / np.tanh(1.1)
 mix *= 0.89 / np.max(np.abs(mix))
 out = HERE / 'assets' / 'teaser-audio.wav'
