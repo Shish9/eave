@@ -289,7 +289,8 @@ public partial class SettingsWindow : Window
                 () => S.WeatherCity, v => S.WeatherCity = v);
         Toggle(p, "Use Fahrenheit", null, () => S.Fahrenheit, v => S.Fahrenheit = v);
         StatusLine(p, () => string.IsNullOrWhiteSpace(S.WeatherCity) ? "Weather is off." :
-                            main.Weather.Available ? main.Weather.Long : "Looking up the weather...");
+                            main.Weather.Available ? main.Weather.Long :
+                            main.Weather.Error != "" ? main.Weather.Error : "Looking up the weather...");
 
         Heading(p, "Calendar (next meeting)");
         TextRow(p, "Private calendar link (.ics)",
@@ -337,6 +338,7 @@ public partial class SettingsWindow : Window
                             "A timestamped backup is saved first, and \"Remove hooks\" takes them out again."));
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
         var status = new TextBlock { Foreground = (Brush)FindResource("Hint"), Margin = new Thickness(0, 8, 0, 0), TextWrapping = TextWrapping.Wrap, FontSize = 12 };
+        status.Text = HookInstaller.Describe(HookInstaller.Check());
         var install = new Button { Content = "Install hooks" };
         var remove = new Button { Content = "Remove hooks", Margin = new Thickness(8, 0, 0, 0) };
         install.Click += (_, _) => { try { status.Text = HookInstaller.Apply(false); } catch (Exception ex) { status.Text = "Failed: " + ex.Message; } };

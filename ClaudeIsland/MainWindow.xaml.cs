@@ -295,10 +295,23 @@ public partial class MainWindow : Window
         }
     }
 
+    /// Errors already written to island.log, so a part that fails every second logs once instead of flooding the file.
+    readonly HashSet<string> loggedFailures = new();
+
+    /// Runs one part of the tick on its own: if it throws, the rest of the island keeps updating.
+    void Safe(string part, Action a)
+    {
+        try { a(); }
+        catch (Exception ex)
+        {
+            if (loggedFailures.Add(part + ex.GetType().Name)) Diag.Log($"{part} failed: {ex}");
+        }
+    }
+
     void OnTick()
     {
         var s = AppSettings.Current;
-        store.Tick();
+        Safe("sessions", store.Tick);
 
         if (timerEnd is DateTime end && DateTime.Now >= end)
         {
@@ -307,49 +320,57 @@ public partial class MainWindow : Window
             SessionStore.Play("timer");
         }
 
-        var closedApps = appWatcher.Poll();
-        if (s.ShowAppClosed && closedApps.Count > 0)
-            Flash(closedApps.Count == 1 ? $"Closed · {closedApps[0].Name}" : $"Closed · {closedApps.Count} apps", "",
-                  Session.StateBrush(SessionState.Stuck), closedApps.Count == 1 ? closedApps[0].Icon : null, 3);
-
-        weather.Tick();
-        calendar.Tick();
-        notifications.Tick();
-        _ = notifications.Status;
-        CheckBattery();
-        CheckCalendar();
-
-        if (s.ShowDownloads)
+        Safe("app watcher", () =>
         {
-            foreach (var d in downloads.Poll())
+            var closedApps = appWatcher.Poll();
+            if (s.ShowAppClosed && closedApps.Count > 0)
+                Flash(closedApps.Count == 1 ? $"Closed · {closedApps[0].Name}" : $"Closed · {closedApps.Count} apps", "",
+                      Session.StateBrush(SessionState.Stuck), closedApps.Count == 1 ? closedApps[0].Icon : null, 3);
+        });
+
+        Safe("weather", weather.Tick);
+        Safe("calendar", calendar.Tick);
+        Safe("notifications", notifications.Tick);
+        Safe("battery", CheckBattery);
+        Safe("calendar notice", CheckCalendar);
+
+        Safe("downloads", () =>
+        {
+            if (s.ShowDownloads)
             {
-                recentDownloads.Insert(0, (d, DateTime.Now));
-                Flash("Download complete", Shorten(d.Name, 26), Session.StateBrush(SessionState.Done), null, 4);
+                foreach (var d in downloads.Poll())
+                {
+                    recentDownloads.Insert(0, (d, DateTime.Now));
+                    Flash("Download complete", Shorten(d.Name, 26), Session.StateBrush(SessionState.Done), null, 4);
+                }
+                recentDownloads.RemoveAll(r => (DateTime.Now - r.At).TotalMinutes > 10);
+                if (recentDownloads.Count > 2) recentDownloads.RemoveRange(2, recentDownloads.Count - 2);
             }
-            recentDownloads.RemoveAll(r => (DateTime.Now - r.At).TotalMinutes > 10);
-            if (recentDownloads.Count > 2) recentDownloads.RemoveRange(2, recentDownloads.Count - 2);
-        }
-        else if (downloads.Active.Count > 0) downloads.Active.Clear();
+            else if (downloads.Active.Count > 0) downloads.Active.Clear();
+        });
 
-        // Hide only when asked to, for a real fullscreen app (never the desktop or taskbar), after two checks in a row.
-        int fsState = NativeMethods.FullscreenState();
-        bool fullscreen = s.FullscreenMode switch
+        Safe("fullscreen check", () =>
         {
-            "Any" => fsState is 2 or 3 or 4,
-            "Games" => fsState is 3 or 4,
-            _ => false,
-        };
-        bool wantHide = fullscreen && store.PendingCount == 0 && !NativeMethods.ForegroundIsShell();
-        hideTicks = wantHide ? hideTicks + 1 : 0;
-        bool hide = hideTicks >= 2;
-        if (hide != isHidden)
-        {
-            isHidden = hide;
-            Diag.Log(hide ? $"hiding for fullscreen app (foreground: {NativeMethods.ForegroundClass()}, state {fsState})" : "showing again");
-        }
-        Visibility = hide ? Visibility.Hidden : Visibility.Visible;
-        if (!hide) Heal();
-        Refresh();
+            // Hide only when asked to, for a real fullscreen app (never the desktop or taskbar), after two checks in a row.
+            int fsState = NativeMethods.FullscreenState();
+            bool fullscreen = s.FullscreenMode switch
+            {
+                "Any" => fsState is 2 or 3 or 4,
+                "Games" => fsState is 3 or 4,
+                _ => false,
+            };
+            bool wantHide = fullscreen && store.PendingCount == 0 && !NativeMethods.ForegroundIsShell();
+            hideTicks = wantHide ? hideTicks + 1 : 0;
+            bool hide = hideTicks >= 2;
+            if (hide != isHidden)
+            {
+                isHidden = hide;
+                Diag.Log(hide ? $"hiding for fullscreen app (foreground: {NativeMethods.ForegroundClass()}, state {fsState})" : "showing again");
+            }
+            Visibility = hide ? Visibility.Hidden : Visibility.Visible;
+            if (!hide) Heal();
+        });
+        Safe("refresh", Refresh);
     }
 
     // ---------------------------------------------------------------- refresh

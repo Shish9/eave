@@ -17,6 +17,8 @@ public class WeatherService
     public int Code;
     public bool IsDay = true;
     public string City = "";
+    /// Why the last lookup failed, for Eave Studio ("" when it worked or hasn't run yet).
+    public string Error = "";
     public event Action? Changed; // raised on a background thread
 
     DateTime lastFetch = DateTime.MinValue;
@@ -50,7 +52,9 @@ public class WeatherService
             {
                 string url = "https://geocoding-api.open-meteo.com/v1/search?count=1&name=" + Uri.EscapeDataString(s.WeatherCity);
                 using var geo = JsonDocument.Parse(await Http.GetStringAsync(url));
-                var hit = geo.RootElement.GetProperty("results")[0];
+                if (!geo.RootElement.TryGetProperty("results", out var results) || results.GetArrayLength() == 0)
+                    throw new InvalidOperationException($"Couldn't find \"{s.WeatherCity}\". Try the city name in English, e.g. \"Riyadh\".");
+                var hit = results[0];
                 s.WeatherLat = hit.GetProperty("latitude").GetDouble();
                 s.WeatherLon = hit.GetProperty("longitude").GetDouble();
                 s.WeatherName = hit.GetProperty("name").GetString() ?? s.WeatherCity;
@@ -69,8 +73,12 @@ public class WeatherService
             IsDay = cur.GetProperty("is_day").GetInt32() == 1;
             City = s.WeatherName;
             Available = true;
+            Error = "";
         }
-        catch { Available = false; }
+        catch (InvalidOperationException ex) { Available = false; Error = ex.Message; }
+        catch (HttpRequestException) { Available = false; Error = "Can't reach open-meteo.com. Check your internet connection; Eave retries every minute."; }
+        catch (TaskCanceledException) { Available = false; Error = "The weather service took too long to answer; Eave retries every minute."; }
+        catch (Exception ex) { Available = false; Error = "Weather failed: " + ex.Message; }
         finally { busy = false; }
         Changed?.Invoke();
     }

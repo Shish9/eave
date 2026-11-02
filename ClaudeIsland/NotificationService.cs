@@ -14,6 +14,7 @@ public class NotificationService
     UserNotificationListener? listener;
     readonly HashSet<uint> seen = new();
     bool baselineDone, started, busy;
+    DateTime retryAt = DateTime.MinValue;   // after a failure, try again later instead of giving up for good
 
     public string Status { get; private set; } = "Off";
     public event Action<string, string, string>? Received;   // app, title, body (raised on a background thread)
@@ -24,9 +25,10 @@ public class NotificationService
         {
             if (started) { started = false; baselineDone = false; seen.Clear(); }
             Status = "Off";
+            retryAt = DateTime.MinValue;
             return;
         }
-        if (busy) return;
+        if (busy || DateTime.Now < retryAt) return;
         _ = Run();
     }
 
@@ -46,7 +48,7 @@ public class NotificationService
                     UserNotificationListenerAccessStatus.Denied => "Blocked in Windows settings (Privacy > Notifications)",
                     _ => "Waiting for your permission",
                 };
-                if (access != UserNotificationListenerAccessStatus.Allowed) { started = false; return; }
+                if (access != UserNotificationListenerAccessStatus.Allowed) { started = false; retryAt = DateTime.Now.AddSeconds(30); return; }
             }
             if (listener == null) return;
 
@@ -70,10 +72,13 @@ public class NotificationService
         }
         catch (Exception ex)
         {
-            Status = "Not available on this PC (" + ex.GetType().Name + ")";
+            // Keep the user's choice: turning the setting off here used to be saved with the next settings change,
+            // which switched notifications off for good after a single hiccup.
+            Status = "Not available right now (" + ex.GetType().Name + "), retrying in a few minutes";
             Diag.Log("notifications: " + ex.Message);
             started = false;
-            AppSettings.Current.ShowNotifications = false;   // don't keep retrying
+            baselineDone = false;
+            retryAt = DateTime.Now.AddMinutes(3);
         }
         finally { busy = false; }
     }

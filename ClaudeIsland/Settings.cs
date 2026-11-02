@@ -68,23 +68,55 @@ public class AppSettings
         @"C:\Windows\System32\notepad.exe",
     };
 
+    /// Set when the user removed Eave's Claude Code hooks on purpose, so startup doesn't put them back.
+    public bool HooksRemoved { get; set; }
+
     static string PathFile => System.IO.Path.Combine(Brand.DataDir, "settings.json");
+    static string BackupFile => PathFile + ".bak";
 
     public static AppSettings Current { get; private set; } = new();
 
+    /// Reads settings.json. A file that can't be read is never silently replaced by defaults:
+    /// a locked file is retried, and a damaged one is kept aside and the last good copy (settings.json.bak) is used.
     public static void Load()
     {
-        try { Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(PathFile)) ?? new(); }
-        catch { Current = new(); }
+        if (!File.Exists(PathFile)) { Current = TryRead(BackupFile) ?? new(); return; }
+        for (int attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(PathFile)) ?? throw new JsonException("empty file");
+                return;
+            }
+            catch (IOException) { System.Threading.Thread.Sleep(200); }   // briefly locked (antivirus, sync, another instance)
+            catch (Exception ex)
+            {
+                Diag.Log($"settings.json could not be read ({ex.GetType().Name}: {ex.Message}); using the backup");
+                try { File.Copy(PathFile, $"{PathFile}.damaged-{DateTime.Now:yyyyMMdd-HHmmss}", true); } catch { }
+                break;
+            }
+        }
+        Current = TryRead(BackupFile) ?? new();
     }
 
+    static AppSettings? TryRead(string file)
+    {
+        try { return File.Exists(file) ? JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(file)) : null; }
+        catch { return null; }
+    }
+
+    /// Writes to a temporary file first and then swaps it in, so a crash or a kill mid-save can't leave a half-written file.
+    /// The previous file is kept as settings.json.bak.
     public static void Save()
     {
         try
         {
             Directory.CreateDirectory(System.IO.Path.GetDirectoryName(PathFile)!);
-            File.WriteAllText(PathFile, JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true }));
+            string tmp = PathFile + ".tmp";
+            File.WriteAllText(tmp, JsonSerializer.Serialize(Current, new JsonSerializerOptions { WriteIndented = true }));
+            if (File.Exists(PathFile)) File.Replace(tmp, PathFile, BackupFile, true);
+            else File.Move(tmp, PathFile);
         }
-        catch { }
+        catch (Exception ex) { Diag.Log($"settings save failed: {ex.Message}"); }
     }
 }
