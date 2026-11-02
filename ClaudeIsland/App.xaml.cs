@@ -25,6 +25,8 @@ public partial class App : System.Windows.Application
     protected override void OnStartup(StartupEventArgs e)
     {
         Brand.MigrateData();
+        // Loaded before the command-line modes too: installing hooks saves settings, and must not save defaults over yours.
+        AppSettings.Load();
 
         // Command-line modes used by Setup.exe and the uninstall entry; they never show UI.
         if (e.Args.Contains("--install"))
@@ -71,7 +73,6 @@ public partial class App : System.Windows.Application
                 Try(() => Process.Start(new ProcessStartInfo(Environment.ProcessPath!, "--restarted") { UseShellExecute = false }));
         };
 
-        AppSettings.Load();
         store = new SessionStore();
         main = new MainWindow(store);
         main.Show();
@@ -97,6 +98,9 @@ public partial class App : System.Windows.Application
         };
         store.Balloon += (t, m) => tray.ShowBalloonTip(4000, t, m, System.Windows.Forms.ToolTipIcon.Info);
         if (studio) OpenSettings();
+
+        // Claude Code only reports to Eave through its hooks: fix them if an update or a deleted folder broke them.
+        _ = Task.Run(HookInstaller.Repair);
     }
 
     static void Try(Action a) { try { a(); } catch { } }
