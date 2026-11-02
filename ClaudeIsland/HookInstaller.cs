@@ -43,12 +43,28 @@ public static class HookInstaller
         {
             string cmd = h?["command"]?.ToString() ?? "";
             var m = OurCommand.Match(cmd.Trim());
-            if (m.Success) return m.Groups["path"].Value;
+            if (m.Success && IsEaveRelay(m.Groups["path"].Value)) return m.Groups["path"].Value;
             // Older formats: relay.exe / relay.js inside an Eave folder, or a folder from before the rename ("...island...").
             if (cmd.Contains("relay.", StringComparison.OrdinalIgnoreCase) &&
                 (cmd.Contains("/Eave", StringComparison.OrdinalIgnoreCase) || cmd.Contains("island", StringComparison.OrdinalIgnoreCase))) return cmd;
         }
         return null;
+    }
+
+    /// Only relays that belong to Eave: inside an "Eave..." folder (the install folder or an unzipped release such as
+    /// Eave-v0.3.1-win-x64), a folder from before the rename ("...island..."), or next to Eave.exe.
+    /// Another tool's relay.exe hook is left alone.
+    static bool IsEaveRelay(string path)
+    {
+        try
+        {
+            string dir = Path.GetDirectoryName(path.Replace('\\', '/').Replace('/', Path.DirectorySeparatorChar)) ?? "";
+            string folder = Path.GetFileName(dir);
+            return folder.StartsWith("Eave", StringComparison.OrdinalIgnoreCase)
+                || folder.Contains("island", StringComparison.OrdinalIgnoreCase)
+                || File.Exists(Path.Combine(dir, Brand.ExeName));
+        }
+        catch { return false; }
     }
 
     static JsonObject ReadSettings() =>
