@@ -7,6 +7,10 @@ namespace ClaudeIsland;
 
 public class AppSettings
 {
+    /// Layout version of settings.json. Raise this and add a step to Migrate() whenever a setting changes meaning.
+    public const int CurrentVersion = 1;
+    public int SettingsVersion { get; set; } = CurrentVersion;
+
     // ---- behavior ----
     public bool Mute { get; set; }
     /// Never | Games | Any. "Games" hides only for exclusive-fullscreen games and presentations.
@@ -86,6 +90,7 @@ public class AppSettings
             try
             {
                 Current = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(PathFile)) ?? throw new JsonException("empty file");
+                Current.Migrate();
                 return;
             }
             catch (IOException) { System.Threading.Thread.Sleep(200); }   // briefly locked (antivirus, sync, another instance)
@@ -99,9 +104,22 @@ public class AppSettings
         Current = TryRead(BackupFile) ?? new();
     }
 
+    void Migrate()
+    {
+        if (SettingsVersion > CurrentVersion)
+            Diag.Log($"settings.json comes from a newer Eave (layout {SettingsVersion}); settings this version doesn't know are ignored");
+        // if (SettingsVersion < 2) { ...convert the old setting... }
+        SettingsVersion = CurrentVersion;
+    }
+
     static AppSettings? TryRead(string file)
     {
-        try { return File.Exists(file) ? JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(file)) : null; }
+        try
+        {
+            var s = File.Exists(file) ? JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(file)) : null;
+            s?.Migrate();
+            return s;
+        }
         catch { return null; }
     }
 

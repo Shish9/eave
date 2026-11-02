@@ -28,3 +28,6 @@ jobs:
 
       - name: Build Eave
         run: dotnet build ClaudeIsland -c Release
+
+      - name: Test
+        run: dotnet test tests/Eave.Tests -c Release

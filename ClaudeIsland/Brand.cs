@@ -15,8 +15,19 @@ public static class Brand
     public const string ProcessName = "Eave";
     public const string LegacyProcessName = "ClaudeIsland";
 
-    static string AppData => Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-    static string LocalAppData => Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    /// The tests point Eave at temporary folders with these environment variables, so they never touch the real
+    /// profile: EAVE_APPDATA, EAVE_LOCALAPPDATA and EAVE_USERPROFILE. Unset (the normal case), the real folders are used.
+    static string? Override(string name)
+    {
+        string? v = Environment.GetEnvironmentVariable(name);
+        return string.IsNullOrWhiteSpace(v) ? null : v;
+    }
+
+    static string AppData => Override("EAVE_APPDATA") ?? Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+    static string LocalAppData => Override("EAVE_LOCALAPPDATA") ?? Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+
+    /// The user's profile folder (where Claude Code keeps its .claude folder).
+    public static string UserProfile => Override("EAVE_USERPROFILE") ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
 
     /// Settings and logs.
     public static string DataDir => Path.Combine(AppData, "Eave");
