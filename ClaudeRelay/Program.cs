@@ -11,6 +11,9 @@ using System.Text.Json.Nodes;
 const int Port = 47821;
 string mode = args.Length > 0 && args[0] == "permission" ? "permission" : "event";
 string dataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Eave");
+// The secret Eave created in %APPDATA%\Eave\token: without it Eave refuses the request.
+string token = "";
+try { token = File.ReadAllText(Path.Combine(dataDir, "token")).Trim(); } catch { }
 
 Console.InputEncoding = new UTF8Encoding(false);
 string body = Console.In.ReadToEnd().TrimStart('﻿');
@@ -34,9 +37,15 @@ using var http = new HttpClient(new SocketsHttpHandler { ConnectTimeout = TimeSp
 };
 try
 {
-    var res = await http.PostAsync($"http://127.0.0.1:{Port}/{mode}", new StringContent(body, Encoding.UTF8, "application/json"));
+    using var req = new HttpRequestMessage(HttpMethod.Post, $"http://127.0.0.1:{Port}/{mode}")
+    {
+        Content = new StringContent(body, Encoding.UTF8, "application/json"),
+    };
+    if (token != "") req.Headers.Add("X-Eave-Token", token);
+    var res = await http.SendAsync(req);
     string text = await res.Content.ReadAsStringAsync();
-    if (mode == "permission" && text.Length > 0 && text != "{}") Console.Out.Write(text);
+    if (!res.IsSuccessStatusCode) Log($"Eave refused {eventName}: {(int)res.StatusCode} (is relay.exe the same version as Eave.exe?)");
+    else if (mode == "permission" && text.Length > 0 && text != "{}") Console.Out.Write(text);
 }
 catch (Exception ex)
 {

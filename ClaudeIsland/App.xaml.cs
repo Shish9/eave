@@ -54,7 +54,12 @@ public partial class App : System.Windows.Application
                 Try(() =>
                 {
                     using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-                    http.PostAsync($"http://127.0.0.1:{HookServer.Port}/studio", new System.Net.Http.StringContent("{}")).Wait();
+                    using var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, $"http://127.0.0.1:{HookServer.Port}/studio")
+                    {
+                        Content = new System.Net.Http.StringContent("{}"),
+                    };
+                    req.Headers.Add(LocalToken.Header, LocalToken.LoadOrCreate());
+                    http.SendAsync(req).Wait();
                 });
             Shutdown();
             return;

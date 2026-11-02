@@ -15,11 +15,13 @@
     <Compile Include="..\..\ClaudeIsland\Brand.cs" Link="Eave\Brand.cs" />
     <Compile Include="..\..\ClaudeIsland\Diag.cs" Link="Eave\Diag.cs" />
     <Compile Include="..\..\ClaudeIsland\Settings.cs" Link="Eave\Settings.cs" />
+    <Compile Include="..\..\ClaudeIsland\LocalToken.cs" Link="Eave\LocalToken.cs" />
     <Compile Include="..\..\ClaudeIsland\HookInstaller.cs" Link="Eave\HookInstaller.cs" />
     <Compile Include="..\..\ClaudeIsland\Registration.cs" Link="Eave\Registration.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
     <PackageReference Include="xunit" Version="2.9.2" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
   </ItemGroup>

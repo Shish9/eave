@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ClaudeIsland;
 
@@ -61,7 +64,25 @@ public class AppSettings
     public double? WeatherLon { get; set; }
     public string WeatherResolvedFor { get; set; } = "";
     public string WeatherName { get; set; } = "";
-    public string CalendarUrl { get; set; } = "";      // a calendar's private iCal (.ics) link
+
+    /// A calendar's private iCal (.ics) link. It works like a password, so it is not saved as plain text: the file
+    /// holds CalendarUrlProtected (encrypted for your Windows account) and the code uses this.
+    [JsonIgnore] public string CalendarUrl { get; set; } = "";
+
+    public string CalendarUrlProtected
+    {
+        get => Secret.Protect(CalendarUrl);
+        set => CalendarUrl = Secret.Unprotect(value);
+    }
+
+    /// Versions up to 0.3.2 saved the link as plain text under "CalendarUrl". It is read once and not written again,
+    /// so the next save replaces it with the encrypted copy.
+    [JsonPropertyName("CalendarUrl"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LegacyCalendarUrl
+    {
+        get => null;
+        set { if (!string.IsNullOrWhiteSpace(value)) CalendarUrl = value; }
+    }
 
     public List<string> QuickLaunch { get; set; } = new()
     {
@@ -136,5 +157,38 @@ public class AppSettings
             else File.Move(tmp, PathFile);
         }
         catch (Exception ex) { Diag.Log($"settings save failed: {ex.Message}"); }
+    }
+}
+
+/// Encrypts a value with Windows data protection (DPAPI) for the current Windows account: only this account on this
+/// PC can read it back, so copying settings.json somewhere else doesn't expose it.
+static class Secret
+{
+    const string Encrypted = "dpapi:", Plain = "plain:";
+
+    public static string Protect(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return "";
+        try
+        {
+            if (OperatingSystem.IsWindows())
+                return Encrypted + Convert.ToBase64String(ProtectedData.Protect(Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser));
+        }
+        catch (Exception ex) { Diag.Log("could not encrypt a setting: " + ex.Message); }
+        return Plain + value;   // only where encryption isn't available (never on a normal Windows PC)
+    }
+
+    public static string Unprotect(string? stored)
+    {
+        if (string.IsNullOrEmpty(stored)) return "";
+        if (stored.StartsWith(Plain, StringComparison.Ordinal)) return stored[Plain.Length..];
+        if (!stored.StartsWith(Encrypted, StringComparison.Ordinal)) return stored;
+        try
+        {
+            if (OperatingSystem.IsWindows())
+                return Encoding.UTF8.GetString(ProtectedData.Unprotect(Convert.FromBase64String(stored[Encrypted.Length..]), null, DataProtectionScope.CurrentUser));
+        }
+        catch (Exception ex) { Diag.Log("could not decrypt a setting (settings copied from another account or PC?): " + ex.Message); }
+        return "";
     }
 }
