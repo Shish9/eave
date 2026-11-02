@@ -35,15 +35,29 @@ In GitHub, repository → Settings → Secrets and variables → Actions:
 
 ## 4. Make a release
 
-1. Push a version tag, for example `v0.3.0`.
-2. GitHub Actions builds Eave and sends it to SignPath. Approve the signing request in SignPath
-   if your policy asks for approval.
-3. The signed `Eave-v0.3.0-win-x64.zip` is attached to a new GitHub release.
+1. Raise the version in `ClaudeIsland/ClaudeIsland.csproj`, `ClaudeRelay/ClaudeRelay.csproj` and
+   `ClaudeIsland/Brand.cs` (the workflow refuses to release if they disagree or don't match the tag), and add
+   the changes to `CHANGELOG.md`.
+2. Push a version tag, for example `v0.3.3`.
+3. GitHub Actions builds Eave, sends `Eave.exe` and `relay.exe` to SignPath (approve the request in SignPath if
+   your policy asks for approval), builds `Eave-Setup-0.3.3.exe` around the signed files, and publishes a
+   GitHub release with the installer and `Eave-0.3.3-portable.zip`.
 
-Until the secret exists, the workflow still runs and produces an `-UNSIGNED` zip you can download
-from the run, but it does not publish a release.
+Until the SignPath secret exists the workflow still publishes the release, with "(unsigned)" in its title and
+a note about the Windows warning, so there is nothing to attach by hand.
 
-## 5. Install the signed build
+To try a build without releasing it, open Actions → release → Run workflow. The installer is attached to the run
+as the `eave-package` artifact.
 
-Unzip, run `Eave.exe --install`. It replaces the old "Claude Island" install, keeps your settings,
-and repoints the Claude Code hooks.
+## 5. Optional: sign the installer too
+
+The steps above sign the two program files. The installer wrapper (`Eave-Setup-….exe`) is not signed yet, so
+Windows can still warn when it is run. To sign it as well, add a second artifact configuration in SignPath for
+the installer (a single `pe-file` for `Eave-Setup-*.exe`) and a second `submit-signing-request` step after the
+installer is built.
+
+## 6. Install the signed build
+
+Run the installer. It replaces an older copy, keeps your settings, and points the Claude Code hooks at the new
+files. (A copy made with `Eave.exe --install` from the portable zip is replaced too, and Settings → Apps lists
+Eave once.)

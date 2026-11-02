@@ -31,17 +31,28 @@ prompts with one click, and keeps music, downloads, weather and more a glance aw
 
 ## Install
 
-1. Download the latest `Eave-…-win-x64.zip` from [Releases](../../releases) and unzip it.
-2. Run `Eave.exe --install` (or just open `Eave.exe` and choose "Eave Studio → Behavior → Install hooks").
-   Eave first lists what it is about to change and asks you to confirm. If you agree, it:
-   - copies itself to `%LOCALAPPDATA%\Eave`
-   - starts with Windows (a per-user startup entry)
-   - adds Start menu entries ("Eave" and "Eave Studio") and an entry in Settings → Apps
-   - adds hooks to `~/.claude/settings.json` so Claude Code reports to Eave (a timestamped backup is saved first)
-3. Start a new Claude Code session.
+1. Download `Eave-Setup-….exe` from [Releases](../../releases) and run it. It installs for your Windows account only,
+   so it doesn't ask for administrator rights.
+2. Choose what you want in the setup window:
+   - **Start Eave when Windows starts**
+   - **Connect to Claude Code**: adds hooks to `~/.claude/settings.json` so Claude Code reports to Eave
+     (a timestamped backup is saved first)
+   - **Desktop shortcut**
+3. Finish, and start a new Claude Code session.
 
-Uninstall from Windows Settings → Apps → Eave, or run `Eave.exe --uninstall`. This removes the app, the startup
-entry, the shortcuts and the Claude Code hooks.
+Windows may say "Windows protected your PC" while releases are not code-signed (see
+[Code signing policy](#code-signing-policy)): click **More info**, then **Run anyway**.
+
+Eave is installed to `%LOCALAPPDATA%\Eave`, with Start menu entries ("Eave" and "Eave Studio") and one entry in
+Settings → Apps.
+
+- **Update:** run the newer setup. Your settings are kept.
+- **Uninstall:** Settings → Apps → Eave. This removes the app, the startup entry, the shortcuts and the Claude Code
+  hooks. Your Eave settings in `%APPDATA%\Eave` are kept.
+
+**No installer?** `Eave-…-portable.zip` holds `Eave.exe` and `relay.exe`. Unzip and run `Eave.exe --install`; it lists
+what it is about to change and asks you to confirm (copy itself to `%LOCALAPPDATA%\Eave`, start with Windows, add the
+Start menu entries and the Claude Code hooks). Remove it with `Eave.exe --uninstall`.
 
 ## Privacy
 
@@ -65,7 +76,8 @@ Requires the .NET 8 SDK.
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
 
-The output is in `dist\`. On PCs with Smart App Control turned on, unsigned builds you make yourself
+The output is in `dist\`: `Eave.exe`, `relay.exe` and, if [Inno Setup 6](https://jrsoftware.org/isdl.php) is installed,
+the installer `Eave-Setup-<version>.exe` (built from `installer\Eave.iss`). On PCs with Smart App Control turned on, unsigned builds you make yourself
 are blocked from running; use a signed release instead.
 
 ## Code signing policy
@@ -73,7 +85,8 @@ are blocked from running; use a signed release instead.
 Free code signing provided by [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org).
 
 Release builds are produced by GitHub Actions from this repository (`.github/workflows/release.yml`)
-and signed through SignPath. Only builds from tagged versions in this repository are signed.
+and, once the SignPath Foundation application is approved, signed through SignPath. Until then releases are
+not signed, and their title says "(unsigned)". Only builds from tagged versions in this repository are signed.
 
 - Committers and reviewers: [Shish9](https://github.com/Shish9)
 - Approvers: [Shish9](https://github.com/Shish9)

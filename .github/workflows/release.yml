@@ -1,7 +1,10 @@
 name: release
 
-# Builds Eave on GitHub's Windows machines, sends the build to SignPath for signing,
-# and attaches the signed zip to a GitHub release when a version tag (v0.3.0, ...) is pushed.
+# Builds Eave on GitHub's Windows machines, signs the program files with SignPath when that is set up,
+# wraps them in an installer, and publishes a GitHub release when a version tag (v0.3.3, ...) is pushed.
+#
+# Run it by hand (Actions > release > Run workflow) to get a test installer without publishing anything:
+# the files are attached to the run as the "eave-package" artifact.
 on:
   push:
     tags: ['v*']
@@ -14,10 +17,24 @@ jobs:
   build:
     runs-on: windows-latest
     env:
-      # Signing is skipped (and an unsigned zip is produced) until the SignPath secret exists.
+      # Without the SignPath secret the build is unsigned; the release says so.
       HAS_SIGNPATH: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Read the version
+        id: version
+        shell: pwsh
+        run: |
+          # One version everywhere: the app, the relay and Brand.cs must agree, and a release tag must match them.
+          $v = @(([xml](Get-Content ClaudeIsland/ClaudeIsland.csproj)).Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          $relay = @(([xml](Get-Content ClaudeRelay/ClaudeRelay.csproj)).Project.PropertyGroup.Version | Where-Object { $_ })[0]
+          $brand = (Select-String -Path ClaudeIsland/Brand.cs -Pattern 'Version = "([^"]+)"').Matches[0].Groups[1].Value
+          if ($relay -ne $v -or $brand -ne $v) { throw "Version mismatch: ClaudeIsland.csproj $v, ClaudeRelay.csproj $relay, Brand.cs $brand" }
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne "v$v") {
+            throw "The tag is $env:GITHUB_REF_NAME but the app version is $v. Change the version or tag again."
+          }
+          "version=$v" >> $env:GITHUB_OUTPUT
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -49,30 +66,64 @@ jobs:
           wait-for-completion: true
           output-artifact-directory: signed
 
-      - name: Package
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build the installer and the portable zip
         shell: pwsh
         run: |
-          $src = if (Test-Path signed) { 'signed' } else { 'dist' }
-          $tag = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME } else { 'dev' }
-          $suffix = if ($src -eq 'signed') { '' } else { '-UNSIGNED' }
-          Compress-Archive -Path "$src/Eave.exe", "$src/relay.exe" -DestinationPath "Eave-$tag-win-x64$suffix.zip"
-          Get-ChildItem *.zip
+          $v = '${{ steps.version.outputs.version }}'
+          $src = if (Test-Path signed) { (Resolve-Path signed).Path } else { (Resolve-Path dist).Path }
+          $iscc = @(
+            (Get-Command iscc -ErrorAction SilentlyContinue).Source,
+            "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -First 1
+          if (-not $iscc) { throw 'Inno Setup was not found after installing it' }
+          New-Item -ItemType Directory -Force out | Out-Null
+          & $iscc "/DAppVersion=$v" "/DSourceDir=$src" "/O$PWD\out" installer\Eave.iss
+          if ($LASTEXITCODE) { throw 'installer build failed' }
+          Compress-Archive -Path "$src\Eave.exe", "$src\relay.exe" -DestinationPath "out\Eave-$v-portable.zip"
+          Get-ChildItem out | Select-Object Name, @{n='MB'; e={[math]::Round($_.Length/1MB,1)}}
 
-      - name: Keep the zip with this run
+      - name: Keep the files with this run
         uses: actions/upload-artifact@v7
         with:
           name: eave-package
-          path: Eave-*.zip
+          path: out/*
+          if-no-files-found: error
 
-      - name: Publish GitHub release
+      - name: Publish GitHub release (signed)
         if: startsWith(github.ref, 'refs/tags/') && env.HAS_SIGNPATH == 'true'
         uses: softprops/action-gh-release@v3
         with:
-          files: Eave-*.zip
+          name: Eave ${{ steps.version.outputs.version }}
+          files: out/*
           generate_release_notes: true
           body: |
-            Eave is a dynamic island for Windows that works with Claude Code. Unzip, then run `Eave.exe --install`.
+            Eave is a dynamic island for Windows that works with Claude Code.
 
-            **Code signing policy:** free code signing provided by [SignPath.io](https://signpath.io), certificate by
-            [SignPath Foundation](https://signpath.org). See the [code signing policy](https://github.com/Shish9/eave#code-signing-policy)
-            and [privacy policy](https://github.com/Shish9/eave#privacy).
+            **Install:** download `Eave-Setup-${{ steps.version.outputs.version }}.exe`, run it and follow the steps. No administrator rights needed.
+            Prefer no installer? `Eave-${{ steps.version.outputs.version }}-portable.zip` has the two program files; run `Eave.exe --install`.
+
+            **Code signing policy:** the program files (`Eave.exe`, `relay.exe`) are signed through SignPath. Free code signing provided by
+            [SignPath.io](https://signpath.io), certificate by [SignPath Foundation](https://signpath.org). The installer wrapper itself is not
+            signed yet, so Windows may still show a warning when you run it. See the
+            [code signing policy](https://github.com/Shish9/eave#code-signing-policy) and [privacy policy](https://github.com/Shish9/eave#privacy).
+
+      - name: Publish GitHub release (unsigned)
+        if: startsWith(github.ref, 'refs/tags/') && env.HAS_SIGNPATH != 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          name: Eave ${{ steps.version.outputs.version }} (unsigned)
+          files: out/*
+          generate_release_notes: true
+          body: |
+            Eave is a dynamic island for Windows that works with Claude Code.
+
+            **Install:** download `Eave-Setup-${{ steps.version.outputs.version }}.exe`, run it and follow the steps. No administrator rights needed.
+            Prefer no installer? `Eave-${{ steps.version.outputs.version }}-portable.zip` has the two program files; run `Eave.exe --install`.
+
+            **This build is not code-signed yet.** Windows SmartScreen may say "Windows protected your PC": click **More info**, then
+            **Run anyway**. PCs with Smart App Control turned on can block unsigned programs. See the [privacy policy](https://github.com/Shish9/eave#privacy).

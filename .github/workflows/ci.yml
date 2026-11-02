@@ -1,0 +1,30 @@
+name: build
+
+# Compiles Eave on every pull request and on main, so a broken build shows up before a release does.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build the relay
+        run: dotnet build ClaudeRelay -c Release
+
+      - name: Build Eave
+        run: dotnet build ClaudeIsland -c Release

@@ -14,6 +14,10 @@ public static class Registration
     /// The folder this copy of the app is running from.
     public static string InstallDir => Path.GetDirectoryName(Environment.ProcessPath)!;
 
+    /// True when Eave-Setup.exe installed this copy: Setup then owns the shortcuts, the startup entry and the
+    /// Settings > Apps entry, and removes them again when you uninstall from Settings > Apps.
+    static bool InstalledBySetup => File.Exists(Path.Combine(InstallDir, "unins000.exe"));
+
     static string Programs => Environment.GetFolderPath(Environment.SpecialFolder.Programs);
     static string ShortcutPath => Path.Combine(Programs, "Eave.lnk");
     static string StudioShortcutPath => Path.Combine(Programs, "Eave Studio.lnk");
@@ -48,6 +52,8 @@ public static class Registration
 
     public static void Register()
     {
+        if (InstalledBySetup) { HookInstaller.Apply(false); return; }   // Setup already did the rest
+
         string exe = Environment.ProcessPath!;
         RemoveLegacy();
 
@@ -117,6 +123,13 @@ public static class Registration
     /// Stops other running instances, then deletes the install folder once this process has exited.
     public static void Uninstall()
     {
+        string setupUninstaller = Path.Combine(InstallDir, "unins000.exe");
+        if (File.Exists(setupUninstaller))   // installed with Setup: let its uninstaller do it so Windows stays in sync
+        {
+            Process.Start(new ProcessStartInfo(setupUninstaller) { UseShellExecute = true });
+            return;
+        }
+
         Unregister();
         StopOtherInstances();
         Process.Start(new ProcessStartInfo("cmd.exe", $"/c ping -n 4 127.0.0.1 >nul & rmdir /s /q \"{InstallDir}\"")
