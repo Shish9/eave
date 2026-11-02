@@ -15,3 +15,6 @@ signed/
 claude-island/
 ClaudeIslandSetup/
 package-lock.json
+
+# marketing renders
+marketing/teaser/*.mp4
