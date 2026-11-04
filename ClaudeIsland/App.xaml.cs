@@ -54,7 +54,12 @@ public partial class App : System.Windows.Application
                 Try(() =>
                 {
                     using var http = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromSeconds(3) };
-                    http.PostAsync($"http://127.0.0.1:{HookServer.Port}/studio", new System.Net.Http.StringContent("{}")).Wait();
+                    using var req = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Post, $"http://127.0.0.1:{HookServer.Port}/studio")
+                    {
+                        Content = new System.Net.Http.StringContent("{}"),
+                    };
+                    req.Headers.Add(LocalToken.Header, LocalToken.LoadOrCreate());
+                    http.SendAsync(req).Wait();
                 });
             Shutdown();
             return;
@@ -62,6 +67,11 @@ public partial class App : System.Windows.Application
 
         base.OnStartup(e);
         Try(() => File.Delete(QuitFlag));
+
+        // Tray-menu clicks run on the Windows Forms side, which WPF's handler below never sees: without this a
+        // failure there shows Windows' raw error box instead of being logged.
+        System.Windows.Forms.Application.SetUnhandledExceptionMode(System.Windows.Forms.UnhandledExceptionMode.CatchException);
+        System.Windows.Forms.Application.ThreadException += (_, a) => Log(a.Exception);
 
         DispatcherUnhandledException += (_, a) => { Log(a.Exception); a.Handled = true; };
         TaskScheduler.UnobservedTaskException += (_, a) => { Log(a.Exception); a.SetObserved(); };
@@ -152,10 +162,23 @@ public partial class App : System.Windows.Application
 
     void OpenSettings()
     {
-        if (settingsWindow != null) { settingsWindow.WindowState = WindowState.Normal; settingsWindow.Activate(); return; }
-        settingsWindow = new SettingsWindow(main);
-        settingsWindow.Closed += (_, _) => settingsWindow = null;
-        settingsWindow.Show();
+        try
+        {
+            if (settingsWindow != null) { settingsWindow.WindowState = WindowState.Normal; settingsWindow.Activate(); return; }
+            var w = new SettingsWindow(main);
+            settingsWindow = w;
+            w.Closed += (_, _) => settingsWindow = null;
+            w.Show();
+        }
+        catch (Exception ex)
+        {
+            Log(ex);
+            settingsWindow = null;
+            System.Windows.MessageBox.Show(
+                $"Eave Studio couldn't open.\n\n{ex.Message}\n\nThe details were saved to:\n{System.IO.Path.Combine(DataDir, "crash.log")}\n\n" +
+                "If it keeps happening, please send that file with a bug report.",
+                Brand.Name, System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)

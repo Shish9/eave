@@ -19,8 +19,38 @@ public static class HookInstaller
 
     public enum HookState { Installed, Missing, Broken, Outdated }
 
-    static string SettingsPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".claude", "settings.json");
+    static string SettingsPath => Path.Combine(Brand.UserProfile, ".claude", "settings.json");
+
+    /// How many timestamped copies of Claude Code's settings.json to keep (each install or removal makes one).
+    const int BackupsToKeep = 5;
+
+    static readonly Regex BackupSuffix = new(@"\.bak-(?<ms>\d+)(-(?<n>\d+))?$");
+
+    /// A backup name that doesn't exist yet: the time in milliseconds, plus -1, -2... if two backups land in the same one.
+    static string NewBackupName(string file)
+    {
+        string name = $"{file}.bak-{DateTimeOffset.Now.ToUnixTimeMilliseconds()}", unique = name;
+        for (int i = 1; File.Exists(unique); i++) unique = $"{name}-{i}";
+        return unique;
+    }
+
+    /// Keeps the newest few of our own backups. The order comes from the number in the name: copying a file on
+    /// Windows keeps the original's modified time, so file times can't tell the copies apart. Files that don't
+    /// match our naming (a backup you made yourself) are never touched.
+    static void PruneBackups(string file)
+    {
+        try
+        {
+            var old = new DirectoryInfo(Path.GetDirectoryName(file)!).GetFiles(Path.GetFileName(file) + ".bak-*")
+                .Select(f => (File: f, Match: BackupSuffix.Match(f.Name)))
+                .Where(x => x.Match.Success)
+                .OrderByDescending(x => long.Parse(x.Match.Groups["ms"].Value))
+                .ThenByDescending(x => x.Match.Groups["n"].Success ? int.Parse(x.Match.Groups["n"].Value) : 0)
+                .Skip(BackupsToKeep);
+            foreach (var x in old) { try { x.File.Delete(); } catch { } }
+        }
+        catch { }
+    }
 
     /// The relay the hooks should call: the installed copy in %LOCALAPPDATA%\Eave when there is one,
     /// so hooks added from an unzipped download keep working after that folder is deleted.
@@ -122,7 +152,11 @@ public static class HookInstaller
         if (!remove && !File.Exists(relay)) return "relay.exe not found next to the app.";
 
         JsonObject root = ReadSettings();
-        if (File.Exists(file)) File.Copy(file, $"{file}.bak-{DateTimeOffset.Now.ToUnixTimeMilliseconds()}");
+        if (File.Exists(file))
+        {
+            File.Copy(file, NewBackupName(file));
+            PruneBackups(file);
+        }
 
         var hooks = root["hooks"] as JsonObject ?? new JsonObject();
         foreach (var (ev, mode) in Events)

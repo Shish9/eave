@@ -15,10 +15,11 @@
     <Description>A dynamic island for Windows that works with Claude Code</Description>
     <Company>Eave contributors</Company>
     <Copyright>Copyright (c) 2026 Eave contributors</Copyright>
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ClaudeRelay\bin\publish\relay.exe" Link="relay.exe" CopyToOutputDirectory="PreserveNewest"

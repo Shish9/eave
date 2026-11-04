@@ -15,6 +15,8 @@ public class HookServer
     readonly HttpListener listener = new();
     readonly SessionStore store;
     readonly Dispatcher ui;
+    readonly string token = LocalToken.LoadOrCreate();
+    bool warnedRefused;
 
     /// Set by the app: opens Eave Studio (used by "Eave.exe --studio" when the island is already running).
     public Action? OnStudio;
@@ -47,6 +49,20 @@ public class HookServer
 
     async Task Handle(HttpListenerContext ctx)
     {
+        // Only Eave's own programs (they send the secret from %APPDATA%\Eave\token) may talk to this port.
+        if (LocalGuard.Check(ctx.Request.Headers["Host"], ctx.Request.Headers["Origin"],
+                             ctx.Request.Headers[LocalToken.Header], token, Port) is int refused)
+        {
+            if (!warnedRefused)
+            {
+                warnedRefused = true;
+                Diag.Log($"refused a request to the local port ({refused}). If this was Claude Code, relay.exe may be older than Eave.exe: " +
+                         "reinstall Eave so both are the same version.");
+            }
+            try { ctx.Response.StatusCode = refused; ctx.Response.Close(); } catch { }
+            return;
+        }
+
         string reply = "{}";
         try
         {

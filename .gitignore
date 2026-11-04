@@ -16,5 +16,5 @@ claude-island/
 ClaudeIslandSetup/
 package-lock.json
 
-# marketing renders
-marketing/teaser/*.mp4
+# promo videos and their source stay out of the repo
+marketing/
