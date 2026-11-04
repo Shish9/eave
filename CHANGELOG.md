@@ -31,6 +31,8 @@ What changed in each version of Eave. Versions match the tags and releases on Gi
 
 ### Changed
 - `settings.json` carries a layout version, so future changes can convert old files.
+- The README has a Troubleshooting section (Smart App Control "Error 4551", SmartScreen, Claude Code not showing up,
+  no weather), and unsigned release notes point to it.
 
 ## 0.3.2 (2026-11-02)
 

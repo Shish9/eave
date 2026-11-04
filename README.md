@@ -54,6 +54,26 @@ Settings → Apps.
 what it is about to change and asks you to confirm (copy itself to `%LOCALAPPDATA%\Eave`, start with Windows, add the
 Start menu entries and the Claude Code hooks). Remove it with `Eave.exe --uninstall`.
 
+### Troubleshooting
+
+**"Error 4551: An Application Control policy has blocked this file"**, or "Unable to execute file in the
+temporary directory". Windows' *Smart App Control* only runs programs that are code-signed, and Eave's releases are
+not signed yet (see [Code signing policy](#code-signing-policy)). Check Windows Security → App & browser control →
+Smart App Control settings. If it says **On**, you can:
+- use a PC where it is off, or
+- switch Smart App Control off. On recent Windows 11 updates you can switch it back on later; on older builds
+  only a Windows reset turns it back on. On a work or school PC your IT department controls it.
+
+Microsoft offers no per-app exception, so Eave itself can't work around this. Signed releases are planned.
+
+**"Windows protected your PC" (SmartScreen).** Click **More info**, then **Run anyway**.
+
+**Claude Code doesn't show up in Eave.** Open Eave Studio → Behavior: the status line under "Claude Code hooks"
+says whether Claude Code is connected. Click **Install hooks** to repair it, then start a new Claude Code session.
+
+**No weather.** Eave Studio → Connections: enter your city (its English name). The line under it says why a
+lookup failed.
+
 ## Privacy
 
 Eave runs locally. It listens only on `127.0.0.1:47821` for events from Claude Code on the same PC.

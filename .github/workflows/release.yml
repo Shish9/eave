@@ -129,4 +129,6 @@ jobs:
             Prefer no installer? `Eave-${{ steps.version.outputs.version }}-portable.zip` has the two program files; run `Eave.exe --install`.
 
             **This build is not code-signed yet.** Windows SmartScreen may say "Windows protected your PC": click **More info**, then
-            **Run anyway**. PCs with Smart App Control turned on can block unsigned programs. See the [privacy policy](https://github.com/Shish9/eave#privacy).
+            **Run anyway**. If Windows says "Error 4551: An Application Control policy has blocked this file", Smart App Control is on and
+            blocks unsigned programs: see [Troubleshooting](https://github.com/Shish9/eave#troubleshooting) for what to do.
+            See also the [privacy policy](https://github.com/Shish9/eave#privacy).
